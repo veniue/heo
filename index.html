@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/gc4LMV3k/IMG-1492.jpg">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Miyo问答飞行棋</title>
+    
+    <!-- 引入自定义字体 -->
+    <link href="https://fontsapi.zeoseven.com/177/main/result.css" onload="this.rel='stylesheet'" rel="preload" as="style" crossorigin />
+    <noscript><link rel="stylesheet" href="https://fontsapi.zeoseven.com/177/main/result.css" /></noscript>
+
+    <style>
+        :root {
+            --bg-color: #DFF6F6;
+            --primary-color: #5BB5B5;
+            --text-color: #5BB5B5;
+            --cell-bg: #F0FBFB;
+            --white: #FFFFFF;
+            --dice-bg-1: #5C8BC0; 
+            --dice-bg-2: #4A6FA5;
+            --dice-border: #7DA7D9;
+            --input-bg: #F0F0F0;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: "cjkFonts Handwriting4", sans-serif;
+            font-weight: normal;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-color);
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px 5px;
+            position: relative;
+            flex-shrink: 0;
+            height: 60px;
+        }
+
+        .round-indicator {
+            position: absolute;
+            left: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #4AA0A0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title {
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+
+        .settings-icon {
+            position: absolute;
+            right: 20px;
+            width: 28px;
+            height: 28px;
+            fill: #7FAFAF;
+            cursor: pointer;
+            z-index: 50;
+        }
+
+        /* --- Game Board --- */
+        .board-wrapper {
+            padding: 10px 20px; 
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .board-paper {
+            background-color: var(--white);
+            width: 100%;
+            padding: 25px 5px;
+            position: relative;
+            clip-path: polygon(
+                0% 0%, 100% 0%, 
+                100% 5%, 95% 10%, 100% 15%, 95% 20%, 100% 25%, 95% 30%, 100% 35%, 95% 40%, 100% 45%, 95% 50%, 100% 55%, 95% 60%, 100% 65%, 95% 70%, 100% 75%, 95% 80%, 100% 85%, 95% 90%, 100% 95%, 
+                100% 100%, 0% 100%,
+                0% 95%, 5% 90%, 0% 85%, 5% 80%, 0% 75%, 5% 70%, 0% 65%, 5% 60%, 0% 55%, 5% 50%, 0% 45%, 5% 40%, 0% 35%, 5% 30%, 0% 25%, 5% 20%, 0% 15%, 5% 10%, 0% 5%
+            );
+        }
+
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .grid-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px; 
+            width: 100%;
+        }
+
+        .cell {
+            width: 42px;
+            height: 42px;
+            background-color: var(--cell-bg);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .cell.start-end {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .face-img {
+            width: 24px;
+            height: auto;
+            opacity: 0.8;
+        }
+
+        .arrow-img {
+            width: 12px;
+            height: auto;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .arrow-right { transform: rotate(0deg); }
+        .arrow-left { transform: rotate(180deg); }
+        .arrow-down { transform: rotate(90deg); }
+
+        .vertical-connect {
+            display: flex;
+            width: 100%;
+            height: 12px;
+            position: relative;
+            justify-content: center;
+        }
+        
+        .v-arrow-container {
+            width: 270px; 
+            position: relative;
+            height: 100%;
+            max-width: 100%;
+        }
+
+        .v-arrow-right { position: absolute; right: 22px; top: -2px; }
+        .v-arrow-left { position: absolute; left: 22px; top: -2px; }
+
+        /* Pieces */
+        .piece-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+        
+        .avatar-piece {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            object-fit: cover;
+            position: absolute;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+
+        /* Offset if on same cell */
+        .piece-user { z-index: 12; transform: translate(-5px, -5px); border-color: #5BB5B5; }
+        .piece-ai { z-index: 11; transform: translate(5px, 5px); border-color: #FF6B6B; }
+
+        /* --- Chat Area --- */
+        .chat-container {
+            flex: 1;
+            padding: 10px 20px; 
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .chat-box {
+            background-color: var(--white);
+            border-radius: 20px;
+            padding: 15px;
+            flex: 1;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.05);
+            min-height: 0;
+        }
+
+        .log-area {
+            flex: 1;
+            background-color: var(--cell-bg);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 16px;
+            color: #666;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .log-msg { margin-bottom: 8px; line-height: 1.4; word-break: break-all; }
+        .log-sys { color: #888; font-size: 14px; text-align: center; margin: 10px 0; }
+        .log-user { color: #5BB5B5; font-weight: bold; }
+        .log-ai { color: #FF6B6B; font-weight: bold; }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+            height: 44px;
+            width: 100%;
+        }
+
+        .chat-input {
+            flex: 1;
+            background-color: var(--input-bg);
+            border: none;
+            border-radius: 10px;
+            padding: 0 12px;
+            font-family: "cjkFonts Handwriting4", sans-serif;
+            font-size: 16px;
+            outline: none;
+            min-width: 0;
+        }
+
+        .chat-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0 12px;
+            font-family: "cjkFonts Handwriting4", sans-serif;
+            font-size: 16px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .chat-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* --- Footer Controls --- */
+        .footer {
+            padding: 10px 30px 40px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .dice-wrapper { width: 60px; height: 60px; perspective: 400px; }
+        .dice { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transform: rotateX(-20deg) rotateY(-20deg); transition: transform 1s ease-out; }
+        .dice-face { position: absolute; width: 60px; height: 60px; background: linear-gradient(135deg, var(--dice-bg-1), var(--dice-bg-2)); border-radius: 12px; border: 1px solid var(--dice-border); display: flex; justify-content: center; align-items: center; box-shadow: inset 0 0 10px rgba(255,255,255,0.1); }
+        .dot { width: 10px; height: 10px; background-color: white; border-radius: 50%; position: absolute; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); }
+        
+        .face-1 { transform: translateZ(30px); }
+        .face-2 { transform: rotateY(180deg) translateZ(30px); }
+        .face-3 { transform: rotateY(90deg) translateZ(30px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(30px); }
+        .face-5 { transform: rotateX(90deg) translateZ(30px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(30px); }
+        
+        .face-2 .dot:nth-child(1) { top: 12px; left: 12px; } .face-2 .dot:nth-child(2) { bottom: 12px; right: 12px; }
+        .face-3 .dot:nth-child(1) { top: 12px; left: 12px; } .face-3 .dot:nth-child(2) { top: 25px; left: 25px; } .face-3 .dot:nth-child(3) { bottom: 12px; right: 12px; }
+        .face-4 .dot:nth-child(1) { top: 12px; left: 12px; } .face-4 .dot:nth-child(2) { top: 12px; right: 12px; } .face-4 .dot:nth-child(3) { bottom: 12px; left: 12px; } .face-4 .dot:nth-child(4) { bottom: 12px; right: 12px; }
+        .face-5 .dot:nth-child(1) { top: 12px; left: 12px; } .face-5 .dot:nth-child(2) { top: 12px; right: 12px; } .face-5 .dot:nth-child(3) { bottom: 12px; left: 12px; } .face-5 .dot:nth-child(4) { bottom: 12px; right: 12px; } .face-5 .dot:nth-child(5) { top: 25px; left: 25px; }
+        .face-6 .dot:nth-child(1) { top: 10px; left: 12px; } .face-6 .dot:nth-child(2) { top: 10px; right: 12px; } .face-6 .dot:nth-child(3) { top: 25px; left: 12px; } .face-6 .dot:nth-child(4) { top: 25px; right: 12px; } .face-6 .dot:nth-child(5) { bottom: 10px; left: 12px; } .face-6 .dot:nth-child(6) { bottom: 10px; right: 12px; }
+
+        .roll-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-size: 22px;
+            font-family: "cjkFonts Handwriting4", sans-serif;
+            box-shadow: 0 4px 0 #4AA0A0;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .roll-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #4AA0A0; }
+        .roll-btn:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+
+        /* --- Settings Panel --- */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-panel.open { transform: translateX(0); }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: var(--bg-color);
+            z-index: 101;
+        }
+
+        .back-icon { width: 24px; height: 24px; fill: var(--primary-color); cursor: pointer; }
+        .settings-title { font-size: 24px; color: var(--primary-color); font-weight: bold; }
+        .settings-content { flex: 1; overflow-y: auto; padding: 10px 20px 40px; }
+        .settings-group { background-color: var(--white); border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .group-title { font-size: 18px; margin-bottom: 10px; color: var(--primary-color); border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
+        .form-item { margin-bottom: 12px; }
+        .form-label { display: block; margin-bottom: 5px; font-size: 14px; color: #666; }
+        .form-input, .form-textarea { width: 100%; background-color: var(--input-bg); border: none; border-radius: 8px; padding: 10px; font-family: "cjkFonts Handwriting4", sans-serif; font-size: 14px; color: #333; outline: none; }
+        .form-textarea { resize: none; height: 80px; }
+        
+        .btn-row { display: flex; gap: 10px; width: 100%; }
+        .action-btn { flex: 1; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; padding: 10px; font-family: "cjkFonts Handwriting4", sans-serif; font-size: 14px; cursor: pointer; text-align: center; }
+        .action-btn.secondary { background-color: #99CBCB; }
+        .action-btn.danger { background-color: #FF6B6B; width: 100%; } 
+        input[type=range] { width: 100%; accent-color: var(--primary-color); }
+
+        .avatar-upload-area { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .avatar-preview { width: 50px; height: 50px; border-radius: 50%; background-color: #eee; object-fit: cover; border: 2px solid var(--primary-color); }
+        .file-input { display: none; }
+        .upload-btn { background-color: #F0F0F0; border: 1px solid #ccc; padding: 5px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+        /* History Items */
+        .history-item {
+            padding: 12px 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item:active { background-color: #f5f5f5; }
+        .history-date { font-size: 12px; color: #888; margin-right: 10px; }
+        .history-info { font-size: 14px; color: #333; flex: 1; }
+        .history-delete {
+            width: 24px;
+            height: 24px;
+            background-color: #FF6B6B;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="round-indicator" id="roundDisplay">
+            <span>我: 1/3</span>
+            <span>TA: 1/3</span>
+        </div>
+        <div class="title">飞行棋</div>
+        <svg class="settings-icon" onclick="openSettings()" viewBox="0 0 24 24">
+            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+        </svg>
+    </div>
+
+    <!-- Board -->
+    <div class="board-wrapper">
+        <div class="board-paper">
+            <div class="grid-container">
+                <!-- Row 1 -->
+                <div class="grid-row">
+                    <div class="cell start-end" id="cell-0">起点</div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-1"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-2"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-3"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-4"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                </div>
+                <div class="vertical-connect"><div class="v-arrow-container"><img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-down v-arrow-right"></div></div>
+                <!-- Row 2 -->
+                <div class="grid-row">
+                    <div class="cell" id="cell-9"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-left">
+                    <div class="cell" id="cell-8"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-left">
+                    <div class="cell" id="cell-7"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-left">
+                    <div class="cell" id="cell-6"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-left">
+                    <div class="cell" id="cell-5"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                </div>
+                <div class="vertical-connect"><div class="v-arrow-container"><img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-down v-arrow-left"></div></div>
+                <!-- Row 3 -->
+                <div class="grid-row">
+                    <div class="cell" id="cell-10"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-11"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-12"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell" id="cell-13"><img src="https://i.postimg.cc/Pr5ZjFd7/IMG-1479.png" class="face-img"></div>
+                    <img src="https://i.postimg.cc/RCRf2zz5/IMG-1478.png" class="arrow-img arrow-right">
+                    <div class="cell start-end" id="cell-14">终点</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container">
+        <div class="chat-box">
+            <div class="log-area" id="logArea"></div>
+            <div class="input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="请输入...">
+                <button class="chat-btn" onclick="handleReceive()" id="receiveBtn">接收</button>
+                <button class="chat-btn" onclick="sendMsg()" id="sendBtn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="dice-wrapper">
+            <div class="dice" id="dice">
+                <div class="dice-face face-1"><div class="dot"></div></div>
+                <div class="dice-face face-2"><div class="dot"></div><div class="dot"></div></div>
+                <div class="dice-face face-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="dice-face face-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="dice-face face-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="dice-face face-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            </div>
+        </div>
+        <button class="roll-btn" onclick="userRoll()" id="rollBtn">掷骰子</button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <svg class="back-icon" onclick="closeSettings()" viewBox="0 0 24 24">
+                <path d="M20,11H7.83l5.59-5.59L12,4l-8,8l8,8l1.41-1.41L7.83,13H20V11z"/>
+            </svg>
+            <div class="settings-title">设置</div>
+            <div style="width: 24px;"></div>
+        </div>
+        <div class="settings-content">
+            
+            <div class="settings-group">
+                <div class="group-title">API设置 (必填)</div>
+                <div class="form-item"><label class="form-label">API地址</label><input type="text" class="form-input" id="apiAddress" placeholder="例如: https://api.openai.com/v1"></div>
+                <div class="form-item"><label class="form-label">API密钥</label><input type="password" class="form-input" id="apiKey" placeholder="sk-..."></div>
+                <div class="form-item">
+                    <label class="form-label">模型名称</label>
+                    <div class="btn-row">
+                        <input type="text" class="form-input" id="modelName" list="modelList" placeholder="gpt-4o-mini">
+                        <datalist id="modelList"></datalist>
+                        <button class="action-btn secondary" style="width: 80px; flex:none;" onclick="fetchModels()">拉取</button>
+                    </div>
+                </div>
+                <div class="form-item"><label class="form-label">温度: <span id="tempValue">0.7</span></label><input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('tempValue').innerText = this.value"></div>
+            </div>
+
+            <div class="settings-group">
+                <div class="group-title">角色设定 (必填)</div>
+                <div class="form-item">
+                    <label class="form-label">角色头像</label>
+                    <div class="avatar-upload-area">
+                        <img id="charAvatarPreview" class="avatar-preview" src="">
+                        <label class="upload-btn">上传图片<input type="file" class="file-input" accept="image/*" onchange="handleImageUpload(this, 'charAvatar')"></label>
+                    </div>
+                </div>
+                <div class="form-item"><label class="form-label">角色设定</label><textarea class="form-textarea" id="characterSettings" placeholder="设定AI扮演的角色..."></textarea></div>
+            </div>
+
+            <div class="settings-group">
+                <div class="group-title">用户设定 (必填)</div>
+                <div class="form-item">
+                    <label class="form-label">用户头像</label>
+                    <div class="avatar-upload-area">
+                        <img id="userAvatarPreview" class="avatar-preview" src="">
+                        <label class="upload-btn">上传图片<input type="file" class="file-input" accept="image/*" onchange="handleImageUpload(this, 'userAvatar')"></label>
+                    </div>
+                </div>
+                <div class="form-item"><label class="form-label">用户设定</label><textarea class="form-textarea" id="userSettings" placeholder="设定关于你的信息..."></textarea></div>
+            </div>
+
+            <div class="settings-group">
+                <div class="group-title">游戏内容</div>
+                <div class="form-item">
+                    <label class="form-label">飞行棋题库 (内置39题，可修改)</label>
+                    <textarea class="form-textarea" id="questionBank" style="height: 150px;" placeholder="每行输入一个问题..."></textarea>
+                </div>
+                <div class="form-item"><label class="form-label">破限 (Jailbreak)</label><textarea class="form-textarea" id="jailbreak" placeholder="输入破限Prompt..."></textarea></div>
+            </div>
+
+            <div class="settings-group">
+                <div class="group-title">记录</div>
+                <div class="form-item"><label class="form-label">历史游玩记录 (点击恢复)</label><div class="form-textarea" style="background: #eef; height: 150px; overflow-y:auto;" id="historyLogDisplay"></div></div>
+                <div class="btn-row" style="margin-bottom: 10px;">
+                    <button class="action-btn secondary" onclick="resetGameData()">重置飞行棋数据</button>
+                    <button class="action-btn secondary" onclick="resetSettingsData()">重置设定数据</button>
+                </div>
+                <div class="form-item">
+                    <button class="action-btn danger" onclick="clearAllData()">清除所有数据</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Questions (Built-in 39) ---
+        const builtInQuestions = [
+            "分享一个你童年最难忘的回忆？", "你最喜欢的季节是什么，为什么？", "如果能拥有一种超能力，你希望是什么？", "最近一次让你开怀大笑的事情是什么？", "你最喜欢的一道菜是什么？", "如果可以穿越时空，你想去哪里？", "你理想中的周末是如何度过的？", "分享一部你看了很多遍的电影？", "你最害怕什么事物？", "如果有一百万，你会先做什么？", "你收到过最特别的礼物是什么？", "你最想学习的一项新技能是什么？", "用三个词形容现在的自己。",
+            "你做过最勇敢的事情是什么？", "如果可以和世界上任何人共进晚餐，你会选谁？", "你最喜欢的一本书是什么？", "分享一个你觉得尴尬的瞬间？", "你更喜欢猫还是狗，为什么？", "你梦想中的旅行目的地是哪里？", "如果你的生活是一部电影，片名会叫什么？", "你最讨厌的一项家务是什么？", "你相信一见钟情吗？", "你最近在单曲循环的一首歌？", "如果可以改变过去的一件事，会是什么？", "你觉得自己最大的优点是什么？", "分享一个你只有在独处时才做的习惯。",
+            "你对未来的一年有什么规划？", "如果世界末日来了，你会给谁打电话？", "你最想对十年前的自己说什么？", "你觉得什么是真正的幸福？", "分享一个你隐藏的才艺？", "你最不喜欢自己性格中的哪一点？", "如果可以变成一种动物，你想变成什么？", "你最难忘的一次旅行经历？", "你觉得男女之间有纯友谊吗？", "你做过最疯狂的梦是什么？", "如果必须放弃手机一周，你会做什么？", "你最想感谢的人是谁？", "讲一个冷笑话。"
+        ];
+
+        // --- State Management ---
+        const diceElement = document.getElementById('dice');
+        const logArea = document.getElementById('logArea');
+        const roundDisplay = document.getElementById('roundDisplay');
+        const rollBtn = document.getElementById('rollBtn');
+        const receiveBtn = document.getElementById('receiveBtn');
+        const chatInput = document.getElementById('chatInput');
+        const totalCells = 15;
+
+        const defaultWelcomeMsg = "系统: 欢迎！请先在设置中配置API、头像和设定，然后才能开始游戏。";
+
+        const defaultGame = {
+            players: {
+                user: { pos: 0, round: 1, isFlying: false, finished: false },
+                ai: { pos: 0, round: 1, isFlying: false, finished: false }
+            },
+            chatLogs: [defaultWelcomeMsg],
+            startTime: Date.now(),
+            currentTurn: 'user' // 'user' or 'ai'
+        };
+
+        const defaultSettings = {
+            apiAddress: "",
+            apiKey: "",
+            modelName: "gpt-4o-mini",
+            temperature: 0.7,
+            questionBank: builtInQuestions.join('\n'),
+            characterSettings: "",
+            charAvatar: "", // Base64
+            userSettings: "",
+            userAvatar: "", // Base64
+            jailbreak: ""
+        };
+
+        let appData = {
+            game: JSON.parse(JSON.stringify(defaultGame)),
+            settings: JSON.parse(JSON.stringify(defaultSettings)),
+            history: []
+        };
+
+        let isRolling = false;
+        let isAiProcessing = false;
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+            loadData();
+            if (appData.game.chatLogs.length > 1 || appData.game.players.user.pos > 0) {
+                archiveCurrentGame();
+                resetGameInternal();
+            }
+            renderUI();
+            checkGameReady();
+            renderHistory();
+        });
+
+        // --- Persistence ---
+        function saveData() {
+            appData.settings.apiAddress = document.getElementById('apiAddress').value;
+            appData.settings.apiKey = document.getElementById('apiKey').value;
+            appData.settings.modelName = document.getElementById('modelName').value;
+            appData.settings.temperature = document.getElementById('temperature').value;
+            appData.settings.questionBank = document.getElementById('questionBank').value;
+            appData.settings.characterSettings = document.getElementById('characterSettings').value;
+            appData.settings.userSettings = document.getElementById('userSettings').value;
+            appData.settings.jailbreak = document.getElementById('jailbreak').value;
+            
+            localStorage.setItem('ludoGameData_v7', JSON.stringify(appData));
+            checkGameReady();
+        }
+
+        function loadData() {
+            const stored = localStorage.getItem('ludoGameData_v7');
+            if (stored) {
+                const loaded = JSON.parse(stored);
+                if(loaded.game) appData.game = loaded.game;
+                if(loaded.settings) appData.settings = { ...defaultSettings, ...loaded.settings };
+                if(loaded.history) appData.history = loaded.history;
+                if(!appData.game) appData.game = JSON.parse(JSON.stringify(defaultGame));
+                // Ensure currentTurn exists
+                if(!appData.game.currentTurn) appData.game.currentTurn = 'user';
+            }
+        }
+
+        function archiveCurrentGame() {
+            const snapshot = JSON.parse(JSON.stringify(appData.game));
+            snapshot.saveDate = new Date().toLocaleString();
+            appData.history.unshift(snapshot);
+            if(appData.history.length > 20) appData.history.pop();
+        }
+
+        function resetGameInternal() {
+            appData.game = JSON.parse(JSON.stringify(defaultGame));
+            appData.game.chatLogs = [defaultWelcomeMsg]; 
+        }
+
+        function resetGameData() {
+            if(confirm("确定要重置当前游戏进度吗？当前进度将保存至历史记录。")) {
+                archiveCurrentGame();
+                resetGameInternal();
+                saveData();
+                renderUI();
+                renderHistory();
+            }
+        }
+
+        function resetSettingsData() {
+            if(confirm("确定要重置角色和用户设定吗？API和游戏进度将保留。")) {
+                appData.settings.characterSettings = "";
+                appData.settings.charAvatar = "";
+                appData.settings.userSettings = "";
+                appData.settings.userAvatar = "";
+                document.getElementById('characterSettings').value = "";
+                document.getElementById('userSettings').value = "";
+                document.getElementById('charAvatarPreview').src = "";
+                document.getElementById('userAvatarPreview').src = "";
+                saveData();
+                renderPieces();
+                checkGameReady();
+            }
+        }
+
+        function clearAllData() {
+            if(confirm('确定要彻底清除所有数据（包括历史记录）吗？此操作不可恢复。')) {
+                localStorage.removeItem('ludoGameData_v7');
+                location.reload();
+            }
+        }
+
+        function restoreGame(index) {
+            if(confirm("确定要恢复这条历史记录吗？当前未保存的进度将丢失。")) {
+                appData.game = JSON.parse(JSON.stringify(appData.history[index]));
+                delete appData.game.saveDate;
+                // Ensure turn state logic is sound
+                if(!appData.game.currentTurn) appData.game.currentTurn = 'user';
+                saveData();
+                renderUI();
+                closeSettings();
+                alert("游戏进度已恢复！");
+            }
+        }
+
+        function deleteHistory(event, index) {
+            event.stopPropagation();
+            if(confirm("确定要删除这条历史记录吗？")) {
+                appData.history.splice(index, 1);
+                saveData();
+                renderHistory();
+            }
+        }
+
+        async function fetchModels() {
+            const url = document.getElementById('apiAddress').value;
+            const key = document.getElementById('apiKey').value;
+            const btn = event.target;
+
+            if (!url) { alert("请先填写API地址"); return; }
+            btn.textContent = "拉取中...";
+            btn.disabled = true;
+
+            try {
+                let fetchUrl = url;
+                if (!fetchUrl.endsWith('/models')) {
+                    fetchUrl = fetchUrl.replace(/\/chat\/completions\/?$/, '');
+                    fetchUrl = fetchUrl.replace(/\/+$/, '');
+                    if (!fetchUrl.endsWith('/v1')) fetchUrl += '/v1';
+                    fetchUrl += '/models';
+                }
+
+                const response = await fetch(fetchUrl, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const list = document.getElementById('modelList');
+                list.innerHTML = ''; 
+                if (data.data && Array.isArray(data.data)) {
+                    data.data.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        list.appendChild(option);
+                    });
+                    alert(`成功拉取 ${data.data.length} 个模型！`);
+                } else {
+                    alert("拉取成功，但格式无法识别。");
+                }
+            } catch (e) {
+                alert("拉取失败: " + e.message);
+            } finally {
+                btn.textContent = "拉取";
+                btn.disabled = false;
+            }
+        }
+
+        // --- UI Rendering ---
+        function renderUI() {
+            const s = appData.settings;
+            document.getElementById('apiAddress').value = s.apiAddress;
+            document.getElementById('apiKey').value = s.apiKey;
+            document.getElementById('modelName').value = s.modelName;
+            document.getElementById('temperature').value = s.temperature;
+            document.getElementById('tempValue').innerText = s.temperature;
+            document.getElementById('questionBank').value = s.questionBank;
+            document.getElementById('characterSettings').value = s.characterSettings;
+            document.getElementById('userSettings').value = s.userSettings;
+            document.getElementById('jailbreak').value = s.jailbreak;
+            
+            document.getElementById('charAvatarPreview').src = s.charAvatar || "";
+            document.getElementById('userAvatarPreview').src = s.userAvatar || "";
+
+            roundDisplay.innerHTML = `<span>我: ${appData.game.players.user.round}/3</span><span>TA: ${appData.game.players.ai.round}/3</span>`;
+
+            logArea.innerHTML = '';
+            appData.game.chatLogs.forEach(entry => {
+                let msg = entry;
+                let type = 'sys';
+                if(entry.startsWith("我:")) { msg = entry.substring(3); type = 'user'; }
+                else if(entry.startsWith("角色:")) { msg = entry.substring(3); type = 'ai'; }
+                else if(entry.startsWith("系统:")) { msg = entry.substring(3); type = 'sys'; }
+                
+                const div = document.createElement('div');
+                div.className = `log-msg log-${type}`;
+                div.textContent = entry;
+                logArea.appendChild(div);
+            });
+            logArea.scrollTop = logArea.scrollHeight;
+
+            renderPieces();
+            checkGameReady(); 
+        }
+
+        function renderPieces() {
+            document.querySelectorAll('.piece-container').forEach(e => e.remove());
+            const s = appData.settings;
+            const p = appData.game.players;
+            if(s.userAvatar) addPieceToBoard(p.user.pos, s.userAvatar, 'piece-user');
+            if(s.charAvatar) addPieceToBoard(p.ai.pos, s.charAvatar, 'piece-ai');
+        }
+
+        function addPieceToBoard(pos, src, className) {
+            const cell = document.getElementById(`cell-${pos}`);
+            if(cell) {
+                let container = cell.querySelector('.piece-container');
+                if(!container) {
+                    container = document.createElement('div');
+                    container.className = 'piece-container';
+                    cell.appendChild(container);
+                }
+                const img = document.createElement('img');
+                img.src = src;
+                img.className = `avatar-piece ${className}`;
+                container.appendChild(img);
+            }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyLogDisplay');
+            container.innerHTML = '';
+            if (appData.history.length === 0) {
+                container.innerHTML = '<div style="padding:10px; color:#999; text-align:center;">暂无历史记录</div>';
+                return;
+            }
+            appData.history.forEach((game, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div class="history-info">进度: 我(${game.players.user.round}/3) TA(${game.players.ai.round}/3)</div>
+                    <div class="history-date">${game.saveDate || '未知时间'}</div>
+                    <div class="history-delete" onclick="deleteHistory(event, ${index})">×</div>
+                `;
+                div.onclick = () => restoreGame(index);
+                container.appendChild(div);
+            });
+        }
+
+        function handleImageUpload(input, key) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    appData.settings[key] = e.target.result;
+                    document.getElementById(key + 'Preview').src = e.target.result;
+                    saveData();
+                    renderPieces();
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function checkGameReady() {
+            const s = appData.settings;
+            const ready = s.apiAddress && s.apiKey && s.characterSettings && s.charAvatar && s.userSettings && s.userAvatar;
+            
+            if (!ready || isRolling || isAiProcessing) {
+                rollBtn.disabled = true;
+                receiveBtn.disabled = true;
+                return;
+            }
+
+            // Turn Logic Enforcement
+            if (appData.game.currentTurn === 'user') {
+                rollBtn.disabled = false;
+                receiveBtn.disabled = false; // User can chat anytime in their turn
+            } else {
+                // AI Turn
+                rollBtn.disabled = true;
+                receiveBtn.disabled = false; // Need to click Receive to trigger AI
+            }
+        }
+
+        // --- Settings UI ---
+        function openSettings() { document.getElementById('settingsPanel').classList.add('open'); }
+        function closeSettings() { saveData(); document.getElementById('settingsPanel').classList.remove('open'); }
+        document.querySelectorAll('.form-input, .form-textarea, input[type=range]').forEach(i => i.addEventListener('change', saveData));
+
+        // --- Game Logic ---
+        function addLog(msg, type='sys') {
+            const prefix = type === 'user' ? "我: " : (type === 'ai' ? "角色: " : "系统: ");
+            const fullMsg = prefix + msg;
+            appData.game.chatLogs.push(fullMsg);
+            
+            const div = document.createElement('div');
+            div.className = `log-msg log-${type}`;
+            div.textContent = fullMsg;
+            logArea.appendChild(div);
+            logArea.scrollTop = logArea.scrollHeight;
+            saveData();
+        }
+
+        function sendMsg() {
+            const val = chatInput.value.trim();
+            if (val) {
+                addLog(val, 'user');
+                chatInput.value = "";
+            }
+        }
+
+        function userRoll() {
+            if (isRolling || isAiProcessing) return;
+            if (appData.game.currentTurn !== 'user') { return; } // Strict turn check
+            if (appData.game.players.user.finished) { addLog("你已完成比赛！等待对手。", "sys"); return; }
+            
+            performRoll('user');
+        }
+
+        // Main AI Trigger Logic
+        async function handleReceive() {
+            if (isRolling || isAiProcessing) return;
+            
+            isAiProcessing = true;
+            checkGameReady();
+
+            // Check if last message was from User
+            const logs = appData.game.chatLogs;
+            const lastLog = logs[logs.length - 1];
+            const userSpoke = lastLog && lastLog.startsWith("我:");
+
+            // 1. Reply to user IF user spoke
+            if (userSpoke) {
+                await callAiChatReply(); 
+            }
+
+            // 2. AI Turn Execution
+            // Only roll if it is AI's turn
+            if (appData.game.currentTurn === 'ai') {
+                if (!appData.game.players.ai.finished) {
+                    await performAiTurn();
+                } else {
+                    addLog("对方已完成比赛。", "sys");
+                    // Pass turn back to user if AI is finished
+                    appData.game.currentTurn = 'user';
+                }
+            }
+
+            isAiProcessing = false;
+            checkGameReady();
+            saveData();
+        }
+
+        async function performAiTurn() {
+            // AI Roll
+            await new Promise(resolve => {
+                isRolling = true;
+                const xRand = Math.floor(Math.random() * 24 + 10) * 90;
+                const yRand = Math.floor(Math.random() * 24 + 10) * 90;
+                diceElement.style.transition = "transform 1s ease-out";
+                diceElement.style.transform = `rotateX(${xRand}deg) rotateY(${yRand}deg)`;
+                
+                setTimeout(() => {
+                    const result = Math.floor(Math.random() * 6) + 1;
+                    addLog(`角色掷出了 ${result} 点`, "sys");
+                    
+                    let finalX = 0, finalY = 0;
+                    switch(result) {
+                        case 1: finalX = 0; finalY = 0; break;
+                        case 2: finalX = 0; finalY = 180; break;
+                        case 3: finalX = 0; finalY = -90; break;
+                        case 4: finalX = 0; finalY = 90; break;
+                        case 5: finalX = -90; finalY = 0; break;
+                        case 6: finalX = 90; finalY = 0; break;
+                    }
+                    diceElement.style.transition = "transform 0.2s";
+                    diceElement.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg)`;
+                    
+                    moveLogic('ai', result);
+                    isRolling = false;
+                    resolve();
+                }, 1000);
+            });
+
+            // AI Answer its own question
+            const player = appData.game.players.ai;
+            if (player.isFlying && !player.finished) {
+                const question = getQuestion(player.round, player.pos);
+                await callAiAnswerQuestion(question);
+            }
+        }
+
+        function performRoll(who) {
+            isRolling = true;
+            checkGameReady();
+
+            const xRand = Math.floor(Math.random() * 24 + 10) * 90;
+            const yRand = Math.floor(Math.random() * 24 + 10) * 90;
+            
+            diceElement.style.transition = "transform 1s ease-out";
+            diceElement.style.transform = `rotateX(${xRand}deg) rotateY(${yRand}deg)`;
+
+            setTimeout(() => {
+                const result = Math.floor(Math.random() * 6) + 1;
+                const name = who === 'user' ? "你" : "角色";
+                addLog(`${name}掷出了 ${result} 点`, "sys");
+                
+                let finalX = 0, finalY = 0;
+                switch(result) {
+                    case 1: finalX = 0; finalY = 0; break;
+                    case 2: finalX = 0; finalY = 180; break;
+                    case 3: finalX = 0; finalY = -90; break;
+                    case 4: finalX = 0; finalY = 90; break;
+                    case 5: finalX = -90; finalY = 0; break;
+                    case 6: finalX = 90; finalY = 0; break;
+                }
+                diceElement.style.transition = "transform 0.2s";
+                diceElement.style.transform = `rotateX(${finalX}deg) rotateY(${finalY}deg)`;
+
+                moveLogic(who, result);
+                isRolling = false;
+                checkGameReady();
+            }, 1000);
+        }
+
+        function moveLogic(who, steps) {
+            const player = appData.game.players[who];
+            let extraTurn = false;
+            
+            if (!player.isFlying) {
+                if (steps === 6) {
+                    addLog(who === 'user' ? "起飞成功！" : "对方起飞成功！", "sys");
+                    player.isFlying = true;
+                    player.pos = 1; 
+                    saveData();
+                    renderPieces();
+                    handleLand(who, 1);
+                } else {
+                    addLog(who === 'user' ? "未掷出6，无法起飞。" : "对方未掷出6，原地待命。", "sys");
+                }
+                // If failed to fly, turn ends.
+            } else {
+                let nextPos = player.pos + steps;
+                if (nextPos >= totalCells - 1) {
+                    addLog(who === 'user' ? `到达终点！完成第 ${player.round} 轮。` : `对方到达终点！完成第 ${player.round} 轮。`, "sys");
+                    if (player.round >= 3) {
+                        player.finished = true;
+                        player.pos = totalCells - 1;
+                        addLog(who === 'user' ? "恭喜你获得胜利！" : "对方获得了胜利！", "sys");
+                    } else {
+                        player.round++;
+                        player.pos = 0;
+                        player.isFlying = false; 
+                        addLog(who === 'user' ? "进入下一轮，需重新起飞。获得额外回合！" : "对方进入下一轮，需重新起飞。获得额外回合！", "sys");
+                        extraTurn = true; // Bonus turn
+                    }
+                } else {
+                    player.pos = nextPos;
+                    addLog(who === 'user' ? `前进到第 ${nextPos} 格` : `对方前进到第 ${nextPos} 格`, "sys");
+                    handleLand(who, nextPos);
+                }
+                saveData();
+                renderPieces();
+                renderUI();
+            }
+
+            // Turn Switching Logic
+            if (!extraTurn) {
+                if (who === 'user') {
+                    appData.game.currentTurn = 'ai';
+                } else {
+                    appData.game.currentTurn = 'user';
+                }
+            }
+            // If extraTurn is true, currentTurn remains the same
+            checkGameReady();
+        }
+
+        function getQuestion(round, pos) {
+            const questions = appData.settings.questionBank.split('\n').filter(q => q.trim() !== '');
+            const globalIndex = (round - 1) * 13 + (pos - 1);
+            return questions[globalIndex] || "（无题）";
+        }
+
+        function handleLand(who, pos) {
+            const question = getQuestion(appData.game.players[who].round, pos);
+            addLog(`【问题】${question}`, "sys");
+            if (who === 'user') {
+                chatInput.placeholder = "请回答问题...";
+            }
+        }
+
+        // --- API Interactions ---
+
+        function cleanAiText(text) {
+            text = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+            text = text.replace(/\*.*?\*/g, "").replace(/（.*?）/g, "").replace(/\(.*?\)/g, "");
+            return text.trim();
+        }
+
+        async function processAndDisplayAiResponse(fullText) {
+            const clean = cleanAiText(fullText);
+            const parts = clean.split(/([。！？.!?]+)/).filter(p => p.trim());
+            
+            let messages = [];
+            for(let i=0; i<parts.length; i+=2) {
+                let msg = parts[i];
+                let punc = parts[i+1] || "";
+                if((msg+punc).trim()) messages.push(msg+punc);
+            }
+            if (messages.length === 0 && clean.length > 0) messages.push(clean);
+
+            for (const msg of messages) {
+                addLog(msg, 'ai');
+                await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
+            }
+        }
+
+        async function callAiChatReply() {
+            const systemPrompt = `你现在扮演：${appData.settings.characterSettings}。用户设定：${appData.settings.userSettings}。你们正在玩飞行棋。请回复用户的话。请只回复对话内容，不要包含动作描写（如*笑*），不要包含心理活动，像线上聊天一样。`;
+            const messages = buildMessages(systemPrompt);
+            await fetchAiResponse(messages);
+        }
+
+        async function callAiAnswerQuestion(question) {
+            const systemPrompt = `你现在扮演：${appData.settings.characterSettings}。用户设定：${appData.settings.userSettings}。轮到你了，你掷骰子走到了一个格子上，问题是：“${question}”。请根据你的人设回答这个问题。请只回复对话内容，不要包含动作描写，不要包含心理活动。`;
+            const messages = buildMessages(systemPrompt);
+            messages.push({ role: "user", content: `你现在的格子问题是：${question}。请回答。` });
+            await fetchAiResponse(messages);
+        }
+
+        function buildMessages(systemContent) {
+            const s = appData.settings;
+            let messages = [{ role: "system", content: `${s.jailbreak}\n\n${systemContent}` }];
+            const recentLogs = appData.game.chatLogs.slice(-6);
+            recentLogs.forEach(log => {
+                if(log.startsWith("我:")) messages.push({ role: "user", content: log.substring(3) });
+                if(log.startsWith("角色:")) messages.push({ role: "assistant", content: log.substring(3) });
+            });
+            return messages;
+        }
+
+        async function fetchAiResponse(messages) {
+            const s = appData.settings;
+            if (!s.apiAddress || !s.apiKey) {
+                addLog("API未配置，无法回复。", "sys");
+                return;
+            }
+
+            addLog("正在输入...", "sys");
+
+            try {
+                let url = s.apiAddress;
+                if (!url.includes('/chat/completions')) {
+                    url = url.replace(/\/+$/, '') + '/chat/completions';
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${s.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: s.modelName,
+                        messages: messages,
+                        temperature: parseFloat(s.temperature)
+                    })
+                });
+
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                appData.game.chatLogs.pop(); // Remove "Typing..."
+                logArea.lastChild.remove();
+
+                await processAndDisplayAiResponse(reply);
+
+            } catch (error) {
+                addLog(`API请求失败: ${error.message}`, "sys");
+            }
+        }
+
+    </script>
+</body>
+</html>
